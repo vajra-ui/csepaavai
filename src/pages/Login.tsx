@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { GraduationCap, User, Users, Shield, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { GraduationCap, User, Users, Shield, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 type PortalType = 'student' | 'faculty' | 'admin' | null;
 
@@ -38,13 +40,45 @@ const portals = [
 export default function Login() {
   const [selectedPortal, setSelectedPortal] = useState<PortalType>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
 
   const handlePortalSelect = (portalId: PortalType) => {
     setSelectedPortal(portalId);
+    setEmail('');
+    setPassword('');
   };
 
   const handleBack = () => {
     setSelectedPortal(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (selectedPortal !== 'admin') {
+      toast.info('This portal is not yet activated. Please contact administrator.');
+      return;
+    }
+
+    if (!email || !password) {
+      toast.error('Please enter email and password');
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await signIn(email, password);
+    
+    if (error) {
+      toast.error(error.message || 'Login failed');
+    } else {
+      toast.success('Login successful!');
+      navigate('/admin');
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -76,8 +110,7 @@ export default function Login() {
                 Portal <span className="text-primary">Access</span>
               </h1>
               <p className="body-regular text-muted-foreground mb-12 max-w-xl mx-auto">
-                Select your role to access the corresponding portal. All portals require 
-                administrator activation before use.
+                Select your role to access the corresponding portal.
               </p>
 
               <div className="grid md:grid-cols-3 gap-6">
@@ -136,56 +169,17 @@ export default function Login() {
                 </div>
 
                 {/* Login Form */}
-                <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-                  {selectedPortal === 'student' && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="rollNumber">Register / Roll Number</Label>
-                        <Input
-                          id="rollNumber"
-                          placeholder="Enter your roll number"
-                          className="h-12"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dob">Date of Birth</Label>
-                        <Input
-                          id="dob"
-                          type="date"
-                          className="h-12"
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {selectedPortal === 'faculty' && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="facultyId">Faculty ID</Label>
-                        <Input
-                          id="facultyId"
-                          placeholder="Enter your faculty ID"
-                          className="h-12"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dob">Date of Birth</Label>
-                        <Input
-                          id="dob"
-                          type="date"
-                          className="h-12"
-                        />
-                      </div>
-                    </>
-                  )}
-
+                <form className="space-y-6" onSubmit={handleSubmit}>
                   {selectedPortal === 'admin' && (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="adminId">Admin ID</Label>
+                        <Label htmlFor="email">Email</Label>
                         <Input
-                          id="adminId"
-                          placeholder="Enter your admin ID"
+                          id="email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="admin@paavai.edu.in"
                           className="h-12"
                         />
                       </div>
@@ -195,6 +189,8 @@ export default function Login() {
                           <Input
                             id="password"
                             type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             placeholder="Enter your password"
                             className="h-12 pr-12"
                           />
@@ -210,23 +206,27 @@ export default function Login() {
                     </>
                   )}
 
-                  <Button 
-                    type="submit" 
-                    className="w-full h-12 bg-primary hover:bg-primary/90"
-                    disabled
-                  >
-                    Sign In
-                  </Button>
-                </form>
+                  {(selectedPortal === 'student' || selectedPortal === 'faculty') && (
+                    <div className="p-4 rounded-xl bg-secondary text-center">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-semibold text-foreground">Portal Not Activated</span>
+                        <br />
+                        This portal will be available once the administrator completes the setup.
+                      </p>
+                    </div>
+                  )}
 
-                {/* Activation Notice */}
-                <div className="mt-6 p-4 rounded-xl bg-secondary text-center">
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground">Portal Not Activated</span>
-                    <br />
-                    This portal will be available once the administrator completes the setup.
-                  </p>
-                </div>
+                  {selectedPortal === 'admin' && (
+                    <Button 
+                      type="submit" 
+                      className="w-full h-12 bg-primary hover:bg-primary/90"
+                      disabled={isLoading}
+                    >
+                      {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Sign In
+                    </Button>
+                  )}
+                </form>
               </div>
             </div>
           )}
