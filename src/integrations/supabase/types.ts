@@ -410,6 +410,84 @@ export type Database = {
         }
         Relationships: []
       }
+      students: {
+        Row: {
+          address: string | null
+          admission_year: number | null
+          avatar_approved: boolean | null
+          avatar_url: string | null
+          batch_year: number | null
+          blood_group: string | null
+          created_at: string
+          current_semester: number | null
+          date_of_birth: string | null
+          department: string | null
+          email: string | null
+          gender: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_name: string | null
+          parent_phone: string | null
+          phone: string | null
+          register_number: string | null
+          roll_number: string
+          section: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          admission_year?: number | null
+          avatar_approved?: boolean | null
+          avatar_url?: string | null
+          batch_year?: number | null
+          blood_group?: string | null
+          created_at?: string
+          current_semester?: number | null
+          date_of_birth?: string | null
+          department?: string | null
+          email?: string | null
+          gender?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_name?: string | null
+          parent_phone?: string | null
+          phone?: string | null
+          register_number?: string | null
+          roll_number: string
+          section?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          admission_year?: number | null
+          avatar_approved?: boolean | null
+          avatar_url?: string | null
+          batch_year?: number | null
+          blood_group?: string | null
+          created_at?: string
+          current_semester?: number | null
+          date_of_birth?: string | null
+          department?: string | null
+          email?: string | null
+          gender?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_name?: string | null
+          parent_phone?: string | null
+          phone?: string | null
+          register_number?: string | null
+          roll_number?: string
+          section?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

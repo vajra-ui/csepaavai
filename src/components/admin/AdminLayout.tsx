@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  UserCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -25,11 +26,12 @@ interface AdminLayoutProps {
 
 const sidebarLinks = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Students', href: '/admin/students', icon: UserCheck },
+  { name: 'Faculty', href: '/admin/faculty', icon: Users },
   { name: 'Images', href: '/admin/images', icon: Image },
   { name: 'Content', href: '/admin/content', icon: FileText },
   { name: 'Achievements', href: '/admin/achievements', icon: Trophy },
   { name: 'Events', href: '/admin/events', icon: Calendar },
-  { name: 'Faculty', href: '/admin/faculty', icon: Users },
   { name: 'Programs', href: '/admin/programs', icon: GraduationCap },
   { name: 'Infrastructure', href: '/admin/infrastructure', icon: Building2 },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
