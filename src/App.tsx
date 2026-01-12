@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import StudentPortal from "./pages/StudentPortal";
+import FacultyPortal from "./pages/FacultyPortal";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminImages from "./pages/admin/AdminImages";
 import AdminContent from "./pages/admin/AdminContent";
@@ -28,6 +30,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/student-portal" element={<StudentPortal />} />
+          <Route path="/faculty-portal" element={<FacultyPortal />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/images" element={<AdminImages />} />
           <Route path="/admin/content" element={<AdminContent />} />
