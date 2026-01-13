@@ -6,6 +6,7 @@ import { FacultySection } from '@/components/landing/FacultySection';
 import { ResearchSection } from '@/components/landing/ResearchSection';
 import { EventsSection } from '@/components/landing/EventsSection';
 import { InfrastructureSection } from '@/components/landing/InfrastructureSection';
+import { VirtualTourSection } from '@/components/landing/VirtualTourSection';
 import { Footer } from '@/components/landing/Footer';
 
 const Index = () => {
@@ -20,6 +21,7 @@ const Index = () => {
         <ResearchSection />
         <EventsSection />
         <InfrastructureSection />
+        <VirtualTourSection />
       </main>
       <Footer />
     </div>
