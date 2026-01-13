@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,37 +44,93 @@ export default function Login() {
   const [selectedPortal, setSelectedPortal] = useState<PortalType | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [loginId, setLoginId] = useState('');
+  const [secret, setSecret] = useState('');
 
   const handlePortalSelect = (portalId: PortalType) => {
     setSelectedPortal(portalId);
-    setEmail('');
-    setPassword('');
+    setLoginId('');
+    setSecret('');
   };
 
   const handleBack = () => {
     setSelectedPortal(null);
-    setEmail('');
-    setPassword('');
+    setLoginId('');
+    setSecret('');
+  };
+
+  const handleStudentLogin = async () => {
+    const identifier = loginId.trim();
+    const dob = secret.trim();
+
+    if (!identifier || !dob) {
+      toast.error('Enter Roll/Register Number and Date of Birth');
+      return;
+    }
+
+    const { data, error } = await supabase.functions.invoke('portal-login', {
+      body: {
+        portalType: 'student',
+        identifier,
+        dob,
+      },
+    });
+
+    if (error) {
+      toast.error('Login failed');
+      return;
+    }
+
+    if (data?.error) {
+      toast.error(data.error);
+      return;
+    }
+
+    if (!data?.access_token || !data?.refresh_token) {
+      toast.error('Login failed');
+      return;
+    }
+
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+    });
+
+    if (sessionError) {
+      toast.error('Login failed');
+      return;
+    }
+
+    toast.success('Login successful!');
+    navigate('/student-portal');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !password) {
-      toast.error('Please enter email and password');
+    if (!selectedPortal) {
+      toast.error('Please select a portal');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const { data, error } = await signIn(email, password);
+      if (selectedPortal === 'student') {
+        await handleStudentLogin();
+        return;
+      }
+
+      // Faculty/Admin: email + password
+      if (!loginId || !secret) {
+        toast.error('Please enter email and password');
+        return;
+      }
+
+      const { data, error } = await signIn(loginId, secret);
 
       if (error) {
         toast.error(error.message || 'Login failed');
-        setIsLoading(false);
         return;
       }
 
@@ -82,7 +139,7 @@ export default function Login() {
         toast.success('Login successful!');
         navigate(portal?.redirectPath || '/');
       }
-    } catch (err) {
+    } catch {
       toast.error('An unexpected error occurred');
     } finally {
       setIsLoading(false);
@@ -90,6 +147,7 @@ export default function Login() {
   };
 
   const selectedPortalData = portals.find((p) => p.id === selectedPortal);
+  const isStudent = selectedPortal === 'student';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
@@ -129,12 +187,7 @@ export default function Login() {
           /* Login Form */
           <Card className="border-2">
             <CardHeader className="text-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBack}
-                className="absolute left-4 top-4"
-              >
+              <Button variant="ghost" size="sm" onClick={handleBack} className="absolute left-4 top-4">
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Back
               </Button>
@@ -144,47 +197,59 @@ export default function Login() {
                 {selectedPortalData && <selectedPortalData.icon className="w-8 h-8" />}
               </div>
               <CardTitle>{selectedPortalData?.title}</CardTitle>
-              <CardDescription>Enter your credentials to continue</CardDescription>
+              <CardDescription>
+                {isStudent ? 'Use Roll/Register Number + Date of Birth' : 'Enter your credentials to continue'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="loginId">{isStudent ? 'Roll / Register Number' : 'Email'}</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="loginId"
+                    type={isStudent ? 'text' : 'email'}
+                    placeholder={isStudent ? 'Enter roll or register number' : 'Enter your email'}
+                    value={loginId}
+                    onChange={(e) => setLoginId(e.target.value)}
                     disabled={isLoading}
+                    autoCapitalize="none"
+                    autoCorrect="off"
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="secret">{isStudent ? 'Date of Birth' : 'Password'}</Label>
                   <div className="relative">
                     <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      id="secret"
+                      type={isStudent ? 'date' : showPassword ? 'text' : 'password'}
+                      placeholder={isStudent ? '' : 'Enter your password'}
+                      value={secret}
+                      onChange={(e) => setSecret(e.target.value)}
                       disabled={isLoading}
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="w-4 h-4 text-muted-foreground" />
-                      )}
-                    </Button>
+
+                    {!isStudent && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    )}
                   </div>
+                  {isStudent && (
+                    <p className="text-xs text-muted-foreground">Format: YYYY-MM-DD (example: 2006-01-24)</p>
+                  )}
                 </div>
+
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
@@ -197,17 +262,13 @@ export default function Login() {
                 </Button>
               </form>
 
-              <p className="text-xs text-center text-muted-foreground mt-4">
-                Contact your administrator if you don't have access.
-              </p>
+              <p className="text-xs text-center text-muted-foreground mt-4">Contact your administrator if you don't have access.</p>
             </CardContent>
           </Card>
         )}
 
         {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground mt-8">
-          © 2025 CSE Department, Paavai Engineering College
-        </p>
+        <p className="text-center text-xs text-muted-foreground mt-8">© 2025 CSE Department, Paavai Engineering College</p>
       </div>
     </div>
   );
