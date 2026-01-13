@@ -1,50 +1,50 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, User, Users, Shield, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { GraduationCap, Users, Shield, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 
-type PortalType = 'student' | 'faculty' | 'admin' | null;
+type PortalType = 'student' | 'faculty' | 'admin';
 
 const portals = [
   {
-    id: 'student' as const,
+    id: 'student' as PortalType,
     title: 'Student Portal',
-    icon: <User className="w-8 h-8" />,
-    description: 'Access your academic dashboard, attendance, and assignments.',
-    color: 'bg-accent text-accent-foreground',
-    hoverColor: 'hover:border-accent'
+    icon: GraduationCap,
+    description: 'Access your academic records and information',
+    color: 'bg-blue-500',
+    redirectPath: '/student-portal',
   },
   {
-    id: 'faculty' as const,
+    id: 'faculty' as PortalType,
     title: 'Faculty Portal',
-    icon: <Users className="w-8 h-8" />,
-    description: 'Manage classes, mark attendance, and evaluate students.',
-    color: 'bg-primary text-primary-foreground',
-    hoverColor: 'hover:border-primary'
+    icon: Users,
+    description: 'Manage courses and view student information',
+    color: 'bg-green-500',
+    redirectPath: '/faculty-portal',
   },
   {
-    id: 'admin' as const,
-    title: 'Admin Portal',
-    icon: <Shield className="w-8 h-8" />,
-    description: 'Full system access for department administration.',
-    color: 'bg-foreground text-background',
-    hoverColor: 'hover:border-foreground'
-  }
+    id: 'admin' as PortalType,
+    title: 'Admin Panel',
+    icon: Shield,
+    description: 'Administrative controls and content management',
+    color: 'bg-purple-500',
+    redirectPath: '/admin',
+  },
 ];
 
 export default function Login() {
-  const [selectedPortal, setSelectedPortal] = useState<PortalType>(null);
+  const navigate = useNavigate();
+  const { signIn } = useAuth();
+  const [selectedPortal, setSelectedPortal] = useState<PortalType | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn } = useAuth();
-  const navigate = useNavigate();
 
   const handlePortalSelect = (portalId: PortalType) => {
     setSelectedPortal(portalId);
@@ -54,15 +54,12 @@ export default function Login() {
 
   const handleBack = () => {
     setSelectedPortal(null);
+    setEmail('');
+    setPassword('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (selectedPortal !== 'admin') {
-      toast.info('This portal is not yet activated. Please contact administrator.');
-      return;
-    }
 
     if (!email || !password) {
       toast.error('Please enter email and password');
@@ -70,175 +67,148 @@ export default function Login() {
     }
 
     setIsLoading(true);
-    const { error } = await signIn(email, password);
-    
-    if (error) {
-      toast.error(error.message || 'Login failed');
-    } else {
-      toast.success('Login successful!');
-      navigate('/admin');
+
+    try {
+      const { data, error } = await signIn(email, password);
+
+      if (error) {
+        toast.error(error.message || 'Login failed');
+        setIsLoading(false);
+        return;
+      }
+
+      if (data?.user) {
+        const portal = portals.find((p) => p.id === selectedPortal);
+        toast.success('Login successful!');
+        navigate(portal?.redirectPath || '/');
+      }
+    } catch (err) {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
+  const selectedPortalData = portals.find((p) => p.id === selectedPortal);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex flex-col">
-      {/* Header */}
-      <header className="p-4">
-        <Link to="/" className="inline-flex items-center gap-3 group">
-          <div className="p-2 rounded-xl bg-primary">
-            <GraduationCap className="h-6 w-6 text-primary-foreground" />
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <GraduationCap className="w-10 h-10 text-primary" />
+            <span className="text-2xl font-bold text-foreground">CSE Department</span>
           </div>
-          <div>
-            <span className="font-display text-lg font-semibold text-primary block leading-tight">
-              CSE Department
-            </span>
-            <span className="text-xs text-muted-foreground">
-              Paavai Engineering College
-            </span>
-          </div>
-        </Link>
-      </header>
+          <p className="text-muted-foreground">Paavai Engineering College</p>
+        </div>
 
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-4xl">
-          {!selectedPortal ? (
-            /* Portal Selection */
-            <div className="text-center">
-              <h1 className="heading-section text-foreground mb-4">
-                Portal <span className="text-primary">Access</span>
-              </h1>
-              <p className="body-regular text-muted-foreground mb-12 max-w-xl mx-auto">
-                Select your role to access the corresponding portal.
-              </p>
-
-              <div className="grid md:grid-cols-3 gap-6">
-                {portals.map((portal) => (
-                  <button
-                    key={portal.id}
-                    onClick={() => handlePortalSelect(portal.id)}
-                    className={cn(
-                      'academic-card text-left group border-2 border-transparent transition-all duration-300',
-                      portal.hoverColor
-                    )}
-                  >
-                    <div className={cn(
-                      'inline-flex p-4 rounded-2xl mb-6 transition-transform group-hover:scale-110',
-                      portal.color
-                    )}>
-                      {portal.icon}
-                    </div>
-                    <h3 className="heading-card text-foreground mb-2">{portal.title}</h3>
+        {!selectedPortal ? (
+          /* Portal Selection */
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-center mb-6">Select Your Portal</h2>
+            {portals.map((portal) => (
+              <Card
+                key={portal.id}
+                className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] border-2 hover:border-primary/50"
+                onClick={() => handlePortalSelect(portal.id)}
+              >
+                <CardContent className="flex items-center gap-4 p-6">
+                  <div className={`p-3 rounded-xl ${portal.color} text-white`}>
+                    <portal.icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{portal.title}</h3>
                     <p className="text-sm text-muted-foreground">{portal.description}</p>
-                  </button>
-                ))}
-              </div>
-
-              <p className="mt-12 text-sm text-muted-foreground">
-                "One Platform. Three Roles. One Future."
-              </p>
-            </div>
-          ) : (
-            /* Login Form */
-            <div className="max-w-md mx-auto">
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          /* Login Form */
+          <Card className="border-2">
+            <CardHeader className="text-center">
               <Button
                 variant="ghost"
+                size="sm"
                 onClick={handleBack}
-                className="mb-8 text-muted-foreground hover:text-foreground"
+                className="absolute left-4 top-4"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Portal Selection
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back
               </Button>
-
-              <div className="academic-card">
-                {/* Portal Header */}
-                <div className="text-center mb-8">
-                  <div className={cn(
-                    'inline-flex p-4 rounded-2xl mb-4',
-                    portals.find(p => p.id === selectedPortal)?.color
-                  )}>
-                    {portals.find(p => p.id === selectedPortal)?.icon}
-                  </div>
-                  <h2 className="heading-card text-foreground">
-                    {portals.find(p => p.id === selectedPortal)?.title}
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Enter your credentials to continue
-                  </p>
-                </div>
-
-                {/* Login Form */}
-                <form className="space-y-6" onSubmit={handleSubmit}>
-                  {selectedPortal === 'admin' && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="admin@paavai.edu.in"
-                          className="h-12"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <div className="relative">
-                          <Input
-                            id="password"
-                            type={showPassword ? 'text' : 'password'}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Enter your password"
-                            className="h-12 pr-12"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          >
-                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {(selectedPortal === 'student' || selectedPortal === 'faculty') && (
-                    <div className="p-4 rounded-xl bg-secondary text-center">
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-semibold text-foreground">Portal Not Activated</span>
-                        <br />
-                        This portal will be available once the administrator completes the setup.
-                      </p>
-                    </div>
-                  )}
-
-                  {selectedPortal === 'admin' && (
-                    <Button 
-                      type="submit" 
-                      className="w-full h-12 bg-primary hover:bg-primary/90"
-                      disabled={isLoading}
-                    >
-                      {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Sign In
-                    </Button>
-                  )}
-                </form>
+              <div
+                className={`w-16 h-16 rounded-2xl ${selectedPortalData?.color} text-white flex items-center justify-center mx-auto mb-4`}
+              >
+                {selectedPortalData && <selectedPortalData.icon className="w-8 h-8" />}
               </div>
-            </div>
-          )}
-        </div>
-      </main>
+              <CardTitle>{selectedPortalData?.title}</CardTitle>
+              <CardDescription>Enter your credentials to continue</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLoading}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
+              </form>
 
-      {/* Footer */}
-      <footer className="p-4 text-center">
-        <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Department of CSE, Paavai Engineering College
+              <p className="text-xs text-center text-muted-foreground mt-4">
+                Contact your administrator if you don't have access.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Footer */}
+        <p className="text-center text-xs text-muted-foreground mt-8">
+          © 2025 CSE Department, Paavai Engineering College
         </p>
-      </footer>
+      </div>
     </div>
   );
 }
