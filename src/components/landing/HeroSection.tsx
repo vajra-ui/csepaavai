@@ -82,6 +82,7 @@ export function HeroSection() {
           <Button 
             size="lg" 
             className="bg-accent text-accent-foreground hover:bg-accent/90 text-base px-8 py-6"
+            onClick={() => document.querySelector('#programs')?.scrollIntoView({ behavior: 'smooth' })}
           >
             Explore Programs
           </Button>
@@ -89,6 +90,7 @@ export function HeroSection() {
             size="lg" 
             variant="outline" 
             className="border-white/30 text-white hover:bg-white/10 text-base px-8 py-6"
+            onClick={() => document.querySelector('#virtual-tour')?.scrollIntoView({ behavior: 'smooth' })}
           >
             Virtual Tour
           </Button>

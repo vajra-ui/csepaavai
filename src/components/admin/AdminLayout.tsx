@@ -15,6 +15,7 @@ import {
   X,
   ChevronRight,
   UserCheck,
+  Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,7 @@ const sidebarLinks = [
   { name: 'Events', href: '/admin/events', icon: Calendar },
   { name: 'Programs', href: '/admin/programs', icon: GraduationCap },
   { name: 'Infrastructure', href: '/admin/infrastructure', icon: Building2 },
+  { name: 'Virtual Tours', href: '/admin/virtual-tours', icon: Video },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
